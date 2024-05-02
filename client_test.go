@@ -276,25 +276,27 @@ func (suite *ClientSuite) TestClientPostSendsRequestWithParams(c *gc.C) {
 	c.Check(postedValues, jc.DeepEquals, expectedPostedValues)
 }
 
-// extractFileContent extracts from the request built using 'requestContent',
+// extractFileContentAndParamValue extracts from the request built using 'requestContent',
 // 'requestHeader' and 'requestURL', the file named 'filename'.
-func extractFileContent(requestContent string, requestHeader *http.Header, requestURL string, _ string) ([]byte, error) {
+// In addition, it extracts the url.Value of the given 'key'.
+func extractFileContentAndParamValue(requestContent string, requestHeader *http.Header, requestURL string, filename string, key string) ([]byte, string, error) {
 	// Recreate the request from server.requestContent to use the parsing
 	// utility from the http package (http.Request.FormFile).
 	request, err := http.NewRequest("POST", requestURL, bytes.NewBufferString(requestContent))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	request.Header.Set("Content-Type", requestHeader.Get("Content-Type"))
-	file, _, err := request.FormFile("testfile")
+	file, _, err := request.FormFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	fileContent, err := io.ReadAll(file)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return fileContent, nil
+
+	return fileContent, request.FormValue(key), nil
 }
 
 func (suite *ClientSuite) TestClientPostSendsMultipartRequest(c *gc.C) {
@@ -313,7 +315,7 @@ func (suite *ClientSuite) TestClientPostSendsMultipartRequest(c *gc.C) {
 
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(string(result), gc.Equals, expectedResult)
-	receivedFileContent, err := extractFileContent(*server.requestContent, server.requestHeader, fullURI, "testfile")
+	receivedFileContent, _, err := extractFileContentAndParamValue(*server.requestContent, server.requestHeader, fullURI, "testfile", "")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(receivedFileContent, jc.DeepEquals, fileContent)
 }
@@ -333,6 +335,28 @@ func (suite *ClientSuite) TestClientPutSendsRequest(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(string(result), gc.Equals, expectedResult)
 	c.Check(*server.requestContent, gc.Equals, "test=123")
+}
+
+func (suite *ClientSuite) TestClientPutFilesSendsRequest(c *gc.C) {
+	URI, err := url.Parse("/some/url")
+	c.Assert(err, jc.ErrorIsNil)
+	expectedResult := "expected:result"
+	params := url.Values{"test": {"123"}}
+	server := newSingleServingServer(URI.String(), expectedResult, http.StatusOK, -1)
+	defer server.Close()
+	client, err := NewAnonymousClient(server.URL, "1.0")
+	c.Assert(err, jc.ErrorIsNil)
+	fileContent := []byte("content")
+	files := map[string][]byte{"testfile": fileContent}
+
+	result, err := client.PutFiles(URI, params, files)
+
+	c.Assert(err, jc.ErrorIsNil)
+	c.Check(string(result), gc.Equals, expectedResult)
+	receivedFileContent, value, err := extractFileContentAndParamValue(*server.requestContent, server.requestHeader, URI.String(), "testfile", "test")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Check(receivedFileContent, jc.DeepEquals, fileContent)
+	c.Check(value, gc.Equals, "123")
 }
 
 func (suite *ClientSuite) TestClientDeleteSendsRequest(c *gc.C) {

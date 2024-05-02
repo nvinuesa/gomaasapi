@@ -163,6 +163,21 @@ func (obj MAASObject) Update(params url.Values) (MAASObject, error) {
 	return jsonObj.GetMAASObject()
 }
 
+// UpdateFiles modifies this object on the API, based on the values given in
+// "params."  It returns the object's new value as received from the API.
+func (obj MAASObject) UpdateFiles(params url.Values, files map[string][]byte) (MAASObject, error) {
+	uri := obj.URI()
+	result, err := obj.client.PutFiles(uri, params, files)
+	if err != nil {
+		return MAASObject{}, err
+	}
+	jsonObj, err := Parse(obj.client, result)
+	if err != nil {
+		return MAASObject{}, err
+	}
+	return jsonObj.GetMAASObject()
+}
+
 // Delete removes this object on the API.
 func (obj MAASObject) Delete() error {
 	uri := obj.URI()

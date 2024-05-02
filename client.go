@@ -252,6 +252,11 @@ func (client Client) Put(uri *url.URL, parameters url.Values) ([]byte, error) {
 	return client.nonIdempotentRequest("PUT", uri, parameters)
 }
 
+// PutFiles updates an object on the API, using an HTTP "PUT" request.
+func (client Client) PutFiles(uri *url.URL, parameters url.Values, files map[string][]byte) ([]byte, error) {
+	return client.nonIdempotentRequestFiles("PUT", uri, parameters, files)
+}
+
 // Delete deletes an object on the API, using an HTTP "DELETE" request.
 func (client Client) Delete(uri *url.URL) error {
 	url := client.GetURL(uri)
