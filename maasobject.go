@@ -152,7 +152,7 @@ func (obj MAASObject) Post(params url.Values) (JSONObject, error) {
 // "params."  It returns the object's new value as received from the API.
 func (obj MAASObject) Update(params url.Values) (MAASObject, error) {
 	uri := obj.URI()
-	result, err := obj.client.Put(uri, params)
+	result, err := obj.client.Put(uri, params, nil)
 	if err != nil {
 		return MAASObject{}, err
 	}
@@ -167,7 +167,7 @@ func (obj MAASObject) Update(params url.Values) (MAASObject, error) {
 // "params."  It returns the object's new value as received from the API.
 func (obj MAASObject) UpdateFiles(params url.Values, files map[string][]byte) (MAASObject, error) {
 	uri := obj.URI()
-	result, err := obj.client.PutFiles(uri, params, files)
+	result, err := obj.client.Put(uri, params, files)
 	if err != nil {
 		return MAASObject{}, err
 	}

@@ -329,27 +329,10 @@ func (suite *ClientSuite) TestClientPutSendsRequest(c *gc.C) {
 	defer server.Close()
 	client, err := NewAnonymousClient(server.URL, "1.0")
 	c.Assert(err, jc.ErrorIsNil)
-
-	result, err := client.Put(URI, params)
-
-	c.Assert(err, jc.ErrorIsNil)
-	c.Check(string(result), gc.Equals, expectedResult)
-	c.Check(*server.requestContent, gc.Equals, "test=123")
-}
-
-func (suite *ClientSuite) TestClientPutFilesSendsRequest(c *gc.C) {
-	URI, err := url.Parse("/some/url")
-	c.Assert(err, jc.ErrorIsNil)
-	expectedResult := "expected:result"
-	params := url.Values{"test": {"123"}}
-	server := newSingleServingServer(URI.String(), expectedResult, http.StatusOK, -1)
-	defer server.Close()
-	client, err := NewAnonymousClient(server.URL, "1.0")
-	c.Assert(err, jc.ErrorIsNil)
 	fileContent := []byte("content")
 	files := map[string][]byte{"testfile": fileContent}
 
-	result, err := client.PutFiles(URI, params, files)
+	result, err := client.Put(URI, params, files)
 
 	c.Assert(err, jc.ErrorIsNil)
 	c.Check(string(result), gc.Equals, expectedResult)
