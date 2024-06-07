@@ -248,7 +248,10 @@ func (client Client) Post(uri *url.URL, operation string, parameters url.Values,
 }
 
 // Put updates an object on the API, using an HTTP "PUT" request.
-func (client Client) Put(uri *url.URL, parameters url.Values) ([]byte, error) {
+func (client Client) Put(uri *url.URL, parameters url.Values, files map[string][]byte) ([]byte, error) {
+	if files != nil {
+		return client.nonIdempotentRequestFiles("PUT", uri, parameters, files)
+	}
 	return client.nonIdempotentRequest("PUT", uri, parameters)
 }
 
